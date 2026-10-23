@@ -3,189 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal ID - Exchange Integration & Registration</title>
+    <title>Universal ID Router</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .widget-card { background: #1e293b; padding: 30px; border-radius: 12px; width: 100%; max-width: 460px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid #334155; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .tab-btn { background: none; border: none; color: #94a3b8; font-size: 14px; font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 4px; }
-        .tab-btn.active { background: #38bdf8; color: #0f172a; }
-        h2 { margin-top: 0; font-size: 20px; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
-        label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-        .input-group { margin-bottom: 15px; }
-        input { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 10px; border-radius: 6px; font-size: 14px; outline: none; box-sizing: border-box; }
-        input:focus { border-color: #38bdf8; }
-        .btn-full { width: 100%; background: #38bdf8; color: #0f172a; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 10px; }
-        .btn-full:hover { background: #0ea5e9; }
-        .result-box { background: #0f172a; border: 1px solid #334155; padding: 16px; border-radius: 6px; font-size: 13px; display: none; margin-top: 15px; }
-        .result-row { display: flex; justify-content: space-between; margin-bottom: 8px; word-break: break-all; gap: 10px; }
-        .result-row:last-child { margin-bottom: 0; }
-        .label-key { color: #94a3b8; min-width: 90px; }
-        .label-val { color: #38bdf8; font-family: monospace; font-size: 12px; text-align: right; }
-        .status-text { font-size: 13px; margin-top: 10px; display: none; word-break: break-all; }
-        .error { color: #f43f5e; }
-        .success { color: #4ade80; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #111827;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 420px;
+            border: 1px solid #1f2937;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #374151;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            color: #9ca3af;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            color: #38bdf8;
+            border-bottom: 2px solid #38bdf8;
+        }
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+        }
+        h2 {
+            margin-top: 0;
+            color: #38bdf8;
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #38bdf8;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0284c7;
+        }
+        .result, .status {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #1f2937;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="widget-card">
+<div class="container">
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('resolve')">⚡ Resolve (@handle)</button>
-        <button class="tab-btn" onclick="switchTab('register')">🔑 Register Passkey</button>
+        <div class="tab active" onclick="switchTab('resolve')">⚡ Resolve</div>
+        <div class="tab" onclick="switchTab('register')">🔑 Register</div>
+        <div class="tab" onclick="switchTab('link')">🔗 Link More</div>
     </div>
 
     <!-- RESOLVE TAB -->
-    <div id="resolveSection">
-        <h2>Universal ID Router</h2>
-        <div class="input-group">
-            <label>Withdrawal Recipient (@handle)</label>
-            <input type="text" id="handleInput" placeholder="e.g. isaac">
-        </div>
-        <button class="btn-full" onclick="resolveHandle()">Resolve Address</button>
-
-        <div id="resolveStatus" class="status-text error"></div>
-
-        <div id="resultBox" class="result-box">
-            <div class="result-row"><span class="label-key">Handle:</span><span id="resHandle" class="label-val"></span></div>
-            <div class="result-row"><span class="label-key">EVM Address:</span><span id="resEvm" class="label-val"></span></div>
-            <div class="result-row"><span class="label-key">Solana:</span><span id="resSol" class="label-val"></span></div>
-            <div class="result-row"><span class="label-key">OKX UID:</span><span id="resOkx" class="label-val"></span></div>
-        </div>
+    <div id="resolve-section" class="form-section active">
+        <h2>Resolve Universal ID</h2>
+        <label>Withdrawal Recipient (@handle)</label>
+        <input type="text" id="resolveHandle" placeholder="e.g. dev_mark">
+        <button onclick="resolveHandle()">Resolve Address</button>
+        <div id="resolveResult" class="result hidden"></div>
     </div>
 
     <!-- REGISTER TAB -->
-    <div id="registerSection" style="display: none;">
+    <div id="register-section" class="form-section">
         <h2>Claim Universal ID</h2>
-        <div class="input-group">
-            <label>Choose @handle</label>
-            <input type="text" id="regHandle" placeholder="e.g. alex">
-        </div>
-        <div class="input-group">
-            <label>EVM Address (Optional)</label>
-            <input type="text" id="regEvm" placeholder="0x...">
-        </div>
-        <div class="input-group">
-            <label>Solana Address (Optional)</label>
-            <input type="text" id="regSol" placeholder="Solana Wallet Pubkey">
-        </div>
-        <div class="input-group">
-            <label>Exchange UID (Optional)</label>
-            <input type="text" id="regOkx" placeholder="Exchange UID (e.g., OKX)">
-        </div>
+        <label>Choose @Handle</label>
+        <input type="text" id="regHandle" placeholder="e.g. alex">
+        <label>EVM Address (Optional)</label>
+        <input type="text" id="regEvm" placeholder="0x...">
+        <label>Solana Address (Optional)</label>
+        <input type="text" id="regSol" placeholder="Solana Wallet Pubkey">
+        <label>Exchange UID (Optional)</label>
+        <input type="text" id="regOkx" placeholder="Exchange UID (e.g., OKX)">
+        <button onclick="registerPasskey()">Create Passkey & Save</button>
+        <div id="regStatus" class="status hidden"></div>
+    </div>
 
-        <button class="btn-full" onclick="registerWithPasskey()">Create Passkey & Save</button>
-        <div id="regStatus" class="status-text"></div>
+    <!-- LINK MORE TAB -->
+    <div id="link-section" class="form-section">
+        <h2>Link Wallet / Exchange</h2>
+        <label>Your Master Handle</label>
+        <input type="text" id="linkHandle" placeholder="e.g. dev_mark">
+        <label>Chain / Type (evm, solana, btc, okx)</label>
+        <input type="text" id="linkChain" placeholder="e.g. evm">
+        <label>Wallet Address or UID</label>
+        <input type="text" id="linkAddress" placeholder="Address or Exchange ID">
+        <button onclick="linkWallet()">Authenticate & Link</button>
+        <div id="linkStatus" class="status hidden"></div>
     </div>
 </div>
 
 <script>
-    const API_BASE = 'https://universal-id-backend.onrender.com';
-
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        if (tab === 'resolve') {
-            document.querySelectorAll('.tab-btn')[0].classList.add('active');
-            document.getElementById('resolveSection').style.display = 'block';
-            document.getElementById('registerSection').style.display = 'none';
-        } else {
-            document.querySelectorAll('.tab-btn')[1].classList.add('active');
-            document.getElementById('resolveSection').style.display = 'none';
-            document.getElementById('registerSection').style.display = 'block';
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        
+        if (tabName === 'resolve') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('resolve-section').classList.add('active');
+        } else if (tabName === 'register') {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('register-section').classList.add('active');
+        } else if (tabName === 'link') {
+            document.querySelectorAll('.tab')[2].classList.add('active');
+            document.getElementById('link-section').classList.add('active');
         }
     }
 
     async function resolveHandle() {
-        const handle = document.getElementById('handleInput').value.trim().replace('@', '');
-        const statusDiv = document.getElementById('resolveStatus');
-        const resultBox = document.getElementById('resultBox');
-        
-        statusDiv.style.display = 'none';
-        resultBox.style.display = 'none';
+        const handle = document.getElementById('resolveHandle').value.trim();
+        const resultDiv = document.getElementById('resolveResult');
+        if (!handle) return;
 
-        if (!handle) {
-            statusDiv.innerText = "Please enter a handle.";
-            statusDiv.style.display = 'block';
-            return;
-        }
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = "Resolving...";
 
         try {
-            const response = await fetch(`${API_BASE}/api/v1/resolve?handle=${encodeURIComponent(handle)}`);
-            const data = await response.json();
+            const res = await fetch(`/api/v1/resolve?handle=${encodeURIComponent(handle)}`);
+            const data = await res.json();
 
-            if (!response.ok) throw new Error(data.error || "Resolution failed");
-
-            document.getElementById('resHandle').innerText = '@' + data.handle;
-            document.getElementById('resEvm').innerText = data.destinations.evm || 'N/A';
-            document.getElementById('resSol').innerText = data.destinations.solana || 'N/A';
-            document.getElementById('resOkx').innerText = data.destinations.okx_uid || 'N/A';
-            
-            resultBox.style.display = 'block';
+            if (res.ok) {
+                let destHtml = '';
+                for (const [key, val] of Object.entries(data.destinations)) {
+                    destHtml += `<div><strong>${key.toUpperCase()}:</strong> ${val}</div>`;
+                }
+                resultDiv.innerHTML = `<div><strong>Handle:</strong> @${data.handle}</div>${destHtml}`;
+            } else {
+                resultDiv.innerHTML = `<span style="color: #ef4444;">${data.error}</span>`;
+            }
         } catch (err) {
-            statusDiv.innerText = err.message;
-            statusDiv.style.display = 'block';
+            resultDiv.innerHTML = `<span style="color: #ef4444;">Resolution network error.</span>`;
         }
     }
 
-    async function registerWithPasskey() {
-        const handle = document.getElementById('regHandle').value.trim().replace('@', '').toLowerCase();
-        const evm = document.getElementById('regEvm').value.trim();
-        const solana = document.getElementById('regSol').value.trim();
-        const okx = document.getElementById('regOkx').value.trim();
-        const regStatus = document.getElementById('regStatus');
-
-        regStatus.className = "status-text";
-        regStatus.innerText = "Prompting hardware Passkey authentication...";
-        regStatus.style.display = "block";
+    async function registerPasskey() {
+        const handle = document.getElementById('regHandle').value.trim();
+        const evm_address = document.getElementById('regEvm').value.trim();
+        const solana_address = document.getElementById('regSol').value.trim();
+        const okx_uid = document.getElementById('regOkx').value.trim();
+        const statusDiv = document.getElementById('regStatus');
 
         if (!handle) {
-            regStatus.className = "status-text error";
-            regStatus.innerText = "Handle is required.";
+            alert("Please enter a handle.");
             return;
         }
 
+        statusDiv.classList.remove('hidden');
+        statusDiv.innerHTML = "Prompting hardware Passkey authentication...";
+
         try {
-            // Native WebAuthn Passkey Registration
+            // Generate WebAuthn credential
+            const challenge = new Uint8Array(32);
+            window.crypto.getRandomValues(challenge);
+            const userId = new Uint8Array(16);
+            window.crypto.getRandomValues(userId);
+
+            const publicKeyCredentialCreationOptions = {
+                challenge: challenge,
+                rp: { name: "Universal ID Protocol", id: window.location.hostname },
+                user: {
+                    id: userId,
+                    name: handle,
+                    displayName: `@${handle}`
+                },
+                pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                timeout: 60000,
+                attestation: "direct"
+            };
+
             const credential = await navigator.credentials.create({
-                publicKey: {
-                    challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
-                    rp: { name: "Universal ID Protocol", id: window.location.hostname },
-                    user: {
-                        id: new Uint8Array([10, 20, 30, 40]),
-                        name: handle,
-                        displayName: handle
-                    },
-                    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                    timeout: 60000,
-                    authenticatorSelection: { userVerification: "preferred" }
-                }
+                publicKey: publicKeyCredentialCreationOptions
             });
 
-            const credentialId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+            const credentialIdBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
 
-            regStatus.innerText = "Passkey verified! Saving to Universal ID registry...";
+            statusDiv.innerHTML = "Saving handle to database...";
 
-            const response = await fetch(`${API_BASE}/api/v1/register`, {
+            const response = await fetch('/api/v1/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    handle: handle,
-                    owner_credential_id: credentialId,
-                    passkey_public_key: 'webauthn_secp256r1_pubkey',
-                    evm_address: evm || null,
-                    solana_address: solana || null,
-                    okx_uid: okx || null
+                    handle,
+                    owner_credential_id: credentialIdBase64,
+                    passkey_public_key: "stored_passkey_placeholder",
+                    evm_address: evm_address || null,
+                    solana_address: solana_address || null,
+                    okx_uid: okx_uid || null
                 })
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Registration failed");
-
-            regStatus.className = "status-text success";
-            regStatus.innerText = `🎉 Successfully claimed @${handle} with Passkey!`;
+            if (response.ok) {
+                statusDiv.innerHTML = `<span style="color: #22c55e;">🎉 Successfully claimed @${data.handle} with Passkey!</span>`;
+            } else {
+                statusDiv.innerHTML = `<span style="color: #ef4444;">${data.error}</span>`;
+            }
         } catch (err) {
-            regStatus.className = "status-text error";
-            regStatus.innerText = err.message || "Passkey registration failed/cancelled.";
+            console.error(err);
+            statusDiv.innerHTML = `<span style="color: #ef4444;">Passkey registration failed or cancelled.</span>`;
+        }
+    }
+
+    async function linkWallet() {
+        const handle = document.getElementById('linkHandle').value.trim();
+        const chain_type = document.getElementById('linkChain').value.trim();
+        const wallet_address = document.getElementById('linkAddress').value.trim();
+        const statusDiv = document.getElementById('linkStatus');
+
+        if (!handle || !chain_type || !wallet_address) {
+            alert("Please fill in all fields.");
+            return;
+        }
+
+        statusDiv.classList.remove('hidden');
+        statusDiv.innerHTML = "Authenticating with Passkey to authorize link...";
+
+        try {
+            // Re-authenticate via Passkey to prove ownership before linking
+            const challenge = new Uint8Array(32);
+            window.crypto.getRandomValues(challenge);
+
+            const assertion = await navigator.credentials.get({
+                publicKey: { challenge: challenge, timeout: 60000, userVerification: "required" }
+            });
+
+            const credentialIdBase64 = btoa(String.fromCharCode(...new Uint8Array(assertion.rawId)));
+
+            statusDiv.innerHTML = "Linking address to handle...";
+
+            const response = await fetch('/api/v1/link-wallet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    handle,
+                    chain_type,
+                    wallet_address,
+                    owner_credential_id: credentialIdBase64
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                statusDiv.innerHTML = `<span style="color: #22c55e;">✅ ${data.message}</span>`;
+            } else {
+                statusDiv.innerHTML = `<span style="color: #ef4444;">${data.error}</span>`;
+            }
+        } catch (err) {
+            console.error(err);
+            statusDiv.innerHTML = `<span style="color: #ef4444;">Authentication failed or cancelled.</span>`;
         }
     }
 </script>
