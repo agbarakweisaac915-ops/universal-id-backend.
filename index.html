@@ -158,7 +158,6 @@
         
         <div id="resolveResult" class="result hidden"></div>
 
-        <!-- Tapped / Auto-filled destination container -->
         <div id="selectedTargetContainer" class="hidden" style="margin-top: 15px;">
             <label>Selected Destination Route</label>
             <input type="text" id="autoFilledAddress" readonly placeholder="Tap a destination card below..." style="background-color: #064e3b; border-color: #059669; color: #6ee7b7; font-family: monospace;">
@@ -175,8 +174,8 @@
         <input type="text" id="regEvm" placeholder="0x...">
         <label>Solana Address (Optional)</label>
         <input type="text" id="regSol" placeholder="Solana Wallet Pubkey">
-        <label>Exchange UID (Optional)</label>
-        <input type="text" id="regOkx" placeholder="Exchange UID (e.g., OKX)">
+        <label>CEX / Exchange Account ID (Optional)</label>
+        <input type="text" id="regOkx" placeholder="Master Exchange UID">
         <button onclick="registerPasskey()">Create Passkey & Save</button>
         <div id="regStatus" class="status hidden"></div>
     </div>
@@ -186,9 +185,9 @@
         <h2>Link Wallet / Exchange</h2>
         <label>Your Master Handle</label>
         <input type="text" id="linkHandle" placeholder="e.g. dev_mark">
-        <label>Chain / Type (evm, solana, btc, okx)</label>
+        <label>Chain / Type (evm, solana, btc, or exchange name)</label>
         <input type="text" id="linkChain" placeholder="e.g. evm">
-        <label>Wallet Address or UID</label>
+        <label>Wallet Address or CEX UID</label>
         <input type="text" id="linkAddress" placeholder="Address or Exchange ID">
         <button onclick="linkWallet()">Authenticate & Link</button>
         <div id="linkStatus" class="status hidden"></div>
@@ -199,8 +198,8 @@
         <h2>Auto-Sync Exchange Wallets</h2>
         <label>Your Master Handle</label>
         <input type="text" id="syncHandle" placeholder="e.g. dev_mark">
-        <label>Exchange Name</label>
-        <input type="text" id="syncExchange" placeholder="okx or binance">
+        <label>Exchange Identifier</label>
+        <input type="text" id="syncExchange" placeholder="e.g. okx, binance, bitget, bybit">
         <label>Exchange API Key</label>
         <input type="password" id="syncApiKey" placeholder="Paste API Key">
         <button onclick="syncExchange()">Auto-Fetch Addresses</button>
@@ -390,4 +389,4 @@
 </script>
 
 </body>
-</html>      
+</html>
