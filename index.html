@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal ID Router</title>
+    <title>Universal ID Protocol Router</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -13,15 +13,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
         .container {
             background-color: #111827;
-            padding: 30px;
-            border-radius: 12px;
+            padding: 28px;
+            border-radius: 14px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            width: 420px;
+            width: 100%;
+            max-width: 460px;
             border: 1px solid #1f2937;
         }
         .tabs {
@@ -31,12 +34,14 @@
         }
         .tab {
             flex: 1;
-            padding: 10px;
+            padding: 10px 4px;
             text-align: center;
             cursor: pointer;
             color: #9ca3af;
             font-weight: 600;
             border-bottom: 2px solid transparent;
+            font-size: 0.82rem;
+            white-space: nowrap;
         }
         .tab.active {
             color: #38bdf8;
@@ -56,7 +61,7 @@
         }
         label {
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: #9ca3af;
@@ -65,12 +70,13 @@
         input {
             width: 100%;
             padding: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 14px;
             background-color: #1f2937;
             border: 1px solid #374151;
             border-radius: 6px;
             color: #fff;
             box-sizing: border-box;
+            font-size: 0.9rem;
         }
         input:focus {
             outline: none;
@@ -78,7 +84,7 @@
         }
         button {
             width: 100%;
-            padding: 10px;
+            padding: 11px;
             background-color: #0284c7;
             color: white;
             border: none;
@@ -86,17 +92,49 @@
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
+            font-size: 0.9rem;
         }
         button:hover {
-            background-color: #0284c7;
+            background-color: #0369a1;
         }
         .result, .status {
             margin-top: 15px;
-            padding: 10px;
+            padding: 12px;
             background-color: #1f2937;
             border-radius: 6px;
             font-size: 0.85rem;
-            word-break: break-all;
+        }
+        .destination-card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            padding: 10px 12px;
+            margin-top: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .destination-card:hover {
+            border-color: #38bdf8;
+            background: #1e293b;
+        }
+        .dest-info {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 290px;
+        }
+        .dest-badge {
+            font-size: 0.7rem;
+            background: #0284c7;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-left: 8px;
         }
         .hidden { display: none; }
     </style>
@@ -108,15 +146,24 @@
         <div class="tab active" onclick="switchTab('resolve')">⚡ Resolve</div>
         <div class="tab" onclick="switchTab('register')">🔑 Register</div>
         <div class="tab" onclick="switchTab('link')">🔗 Link More</div>
+        <div class="tab" onclick="switchTab('sync')">🔄 Auto-Sync</div>
     </div>
 
-    <!-- RESOLVE TAB -->
+    <!-- RESOLVE & SEND TAB -->
     <div id="resolve-section" class="form-section active">
-        <h2>Resolve Universal ID</h2>
-        <label>Withdrawal Recipient (@handle)</label>
+        <h2>Send via Universal ID</h2>
+        <label>Recipient Handle</label>
         <input type="text" id="resolveHandle" placeholder="e.g. dev_mark">
-        <button onclick="resolveHandle()">Resolve Address</button>
+        <button onclick="resolveHandle()">Lookup Destinations</button>
+        
         <div id="resolveResult" class="result hidden"></div>
+
+        <!-- Tapped / Auto-filled destination container -->
+        <div id="selectedTargetContainer" class="hidden" style="margin-top: 15px;">
+            <label>Selected Destination Route</label>
+            <input type="text" id="autoFilledAddress" readonly placeholder="Tap a destination card below..." style="background-color: #064e3b; border-color: #059669; color: #6ee7b7; font-family: monospace;">
+            <button style="background-color: #059669;" onclick="alert('Ready to execute transfer to target route!')">Proceed with Transfer 🚀</button>
+        </div>
     </div>
 
     <!-- REGISTER TAB -->
@@ -146,6 +193,19 @@
         <button onclick="linkWallet()">Authenticate & Link</button>
         <div id="linkStatus" class="status hidden"></div>
     </div>
+
+    <!-- AUTO-SYNC TAB -->
+    <div id="sync-section" class="form-section">
+        <h2>Auto-Sync Exchange Wallets</h2>
+        <label>Your Master Handle</label>
+        <input type="text" id="syncHandle" placeholder="e.g. dev_mark">
+        <label>Exchange Name</label>
+        <input type="text" id="syncExchange" placeholder="okx or binance">
+        <label>Exchange API Key</label>
+        <input type="password" id="syncApiKey" placeholder="Paste API Key">
+        <button onclick="syncExchange()">Auto-Fetch Addresses</button>
+        <div id="syncStatus" class="status hidden"></div>
+    </div>
 </div>
 
 <script>
@@ -153,42 +213,55 @@
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
         
-        if (tabName === 'resolve') {
-            document.querySelectorAll('.tab')[0].classList.add('active');
-            document.getElementById('resolve-section').classList.add('active');
-        } else if (tabName === 'register') {
-            document.querySelectorAll('.tab')[1].classList.add('active');
-            document.getElementById('register-section').classList.add('active');
-        } else if (tabName === 'link') {
-            document.querySelectorAll('.tab')[2].classList.add('active');
-            document.getElementById('link-section').classList.add('active');
-        }
+        const tabs = {'resolve': 0, 'register': 1, 'link': 2, 'sync': 3};
+        document.querySelectorAll('.tab')[tabs[tabName]].classList.add('active');
+        document.getElementById(`${tabName}-section`).classList.add('active');
     }
 
     async function resolveHandle() {
         const handle = document.getElementById('resolveHandle').value.trim();
         const resultDiv = document.getElementById('resolveResult');
+        const targetContainer = document.getElementById('selectedTargetContainer');
+        
         if (!handle) return;
 
         resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = "Resolving...";
+        resultDiv.innerHTML = "Resolving recipient profile...";
+        targetContainer.classList.add('hidden');
 
         try {
             const res = await fetch(`/api/v1/resolve?handle=${encodeURIComponent(handle)}`);
             const data = await res.json();
 
             if (res.ok) {
-                let destHtml = '';
+                let cardsHtml = `<div style="margin-bottom: 8px; font-weight: bold; color: #38bdf8;">Tap a destination to auto-fill:</div>`;
+                
                 for (const [key, val] of Object.entries(data.destinations)) {
-                    destHtml += `<div><strong>${key.toUpperCase()}:</strong> ${val}</div>`;
+                    cardsHtml += `
+                        <div class="destination-card" onclick="selectDestination('${key}', '${val}')">
+                            <div class="dest-info">
+                                <span style="font-size: 0.7rem; color: #9ca3af; display: block; font-weight: bold;">${key.toUpperCase()}</span>
+                                <span style="font-family: monospace; font-size: 0.85rem;">${val}</span>
+                            </div>
+                            <span class="dest-badge">Select</span>
+                        </div>
+                    `;
                 }
-                resultDiv.innerHTML = `<div><strong>Handle:</strong> @${data.handle}</div>${destHtml}`;
+                resultDiv.innerHTML = cardsHtml;
             } else {
                 resultDiv.innerHTML = `<span style="color: #ef4444;">${data.error}</span>`;
             }
         } catch (err) {
             resultDiv.innerHTML = `<span style="color: #ef4444;">Resolution network error.</span>`;
         }
+    }
+
+    function selectDestination(type, address) {
+        const targetInput = document.getElementById('autoFilledAddress');
+        const targetContainer = document.getElementById('selectedTargetContainer');
+        
+        targetInput.value = `[${type.toUpperCase()}] ${address}`;
+        targetContainer.classList.remove('hidden');
     }
 
     async function registerPasskey() {
@@ -198,40 +271,29 @@
         const okx_uid = document.getElementById('regOkx').value.trim();
         const statusDiv = document.getElementById('regStatus');
 
-        if (!handle) {
-            alert("Please enter a handle.");
-            return;
-        }
+        if (!handle) { alert("Please enter a handle."); return; }
 
         statusDiv.classList.remove('hidden');
         statusDiv.innerHTML = "Prompting hardware Passkey authentication...";
 
         try {
-            // Generate WebAuthn credential
             const challenge = new Uint8Array(32);
             window.crypto.getRandomValues(challenge);
             const userId = new Uint8Array(16);
             window.crypto.getRandomValues(userId);
 
-            const publicKeyCredentialCreationOptions = {
-                challenge: challenge,
-                rp: { name: "Universal ID Protocol", id: window.location.hostname },
-                user: {
-                    id: userId,
-                    name: handle,
-                    displayName: `@${handle}`
-                },
-                pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                timeout: 60000,
-                attestation: "direct"
-            };
-
             const credential = await navigator.credentials.create({
-                publicKey: publicKeyCredentialCreationOptions
+                publicKey: {
+                    challenge: challenge,
+                    rp: { name: "Universal ID Protocol", id: window.location.hostname },
+                    user: { id: userId, name: handle, displayName: `@${handle}` },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                    timeout: 60000,
+                    attestation: "direct"
+                }
             });
 
             const credentialIdBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-
             statusDiv.innerHTML = "Saving handle to database...";
 
             const response = await fetch('/api/v1/register', {
@@ -254,7 +316,6 @@
                 statusDiv.innerHTML = `<span style="color: #ef4444;">${data.error}</span>`;
             }
         } catch (err) {
-            console.error(err);
             statusDiv.innerHTML = `<span style="color: #ef4444;">Passkey registration failed or cancelled.</span>`;
         }
     }
@@ -265,16 +326,12 @@
         const wallet_address = document.getElementById('linkAddress').value.trim();
         const statusDiv = document.getElementById('linkStatus');
 
-        if (!handle || !chain_type || !wallet_address) {
-            alert("Please fill in all fields.");
-            return;
-        }
+        if (!handle || !chain_type || !wallet_address) { alert("Please fill in all fields."); return; }
 
         statusDiv.classList.remove('hidden');
         statusDiv.innerHTML = "Authenticating with Passkey to authorize link...";
 
         try {
-            // Re-authenticate via Passkey to prove ownership before linking
             const challenge = new Uint8Array(32);
             window.crypto.getRandomValues(challenge);
 
@@ -283,18 +340,12 @@
             });
 
             const credentialIdBase64 = btoa(String.fromCharCode(...new Uint8Array(assertion.rawId)));
-
             statusDiv.innerHTML = "Linking address to handle...";
 
             const response = await fetch('/api/v1/link-wallet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    handle,
-                    chain_type,
-                    wallet_address,
-                    owner_credential_id: credentialIdBase64
-                })
+                body: JSON.stringify({ handle, chain_type, wallet_address, owner_credential_id: credentialIdBase64 })
             });
 
             const data = await response.json();
@@ -304,8 +355,36 @@
                 statusDiv.innerHTML = `<span style="color: #ef4444;">${data.error}</span>`;
             }
         } catch (err) {
-            console.error(err);
             statusDiv.innerHTML = `<span style="color: #ef4444;">Authentication failed or cancelled.</span>`;
+        }
+    }
+
+    async function syncExchange() {
+        const handle = document.getElementById('syncHandle').value.trim();
+        const exchange_name = document.getElementById('syncExchange').value.trim();
+        const api_key = document.getElementById('syncApiKey').value.trim();
+        const statusDiv = document.getElementById('syncStatus');
+
+        if (!handle || !exchange_name || !api_key) { alert("Please fill in all fields."); return; }
+
+        statusDiv.classList.remove('hidden');
+        statusDiv.innerHTML = "Auto-fetching deposit addresses from exchange API...";
+
+        try {
+            const response = await fetch('/api/v1/sync-exchange', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ handle, exchange_name, api_key })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                statusDiv.innerHTML = `<span style="color: #22c55e;">✅ ${data.message}</span>`;
+            } else {
+                statusDiv.innerHTML = `<span style="color: #ef4444;">${data.error}</span>`;
+            }
+        } catch (err) {
+            statusDiv.innerHTML = `<span style="color: #ef4444;">Sync network error.</span>`;
         }
     }
 </script>
